@@ -17,12 +17,33 @@
  */
 struct list_head *q_new()
 {
-    // test
-    return NULL;
+    struct list_head *head = malloc(sizeof(struct list_head));
+    if (!head)
+        return NULL;
+    
+    INIT_LIST_HEAD(head);
+    return head;
 }
 
 /* Free all storage used by queue */
-void q_free(struct list_head *l) {}
+void q_free(struct list_head *head)
+{
+    if (!head)
+        return;
+    
+    struct list_head *node, *safe;
+    
+    // Free all elements in the list
+    list_for_each_safe(node, safe, head) {
+        element_t *element = list_entry(node, element_t, list);
+        list_del(node);
+        free(element->value);
+        free(element);
+    }
+    
+    // Free the head itself
+    free(head);
+}
 
 /*
  * Attempt to insert element at head of queue.
@@ -33,6 +54,25 @@ void q_free(struct list_head *l) {}
  */
 bool q_insert_head(struct list_head *head, char *s)
 {
+    if (!head || !s)
+        return false;
+    
+    element_t *new_element = malloc(sizeof(element_t));
+    if (!new_element)
+        return false;
+    
+    // Allocate space for the string and copy it
+    new_element->value = malloc(strlen(s) + 1);
+    if (!new_element->value) {
+        free(new_element);
+        return false;
+    }
+    
+    strcpy(new_element->value, s);
+    
+    // Add to the head of the list
+    list_add(&new_element->list, head);
+    
     return true;
 }
 
@@ -45,6 +85,25 @@ bool q_insert_head(struct list_head *head, char *s)
  */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    if (!head || !s)
+        return false;
+    
+    element_t *new_element = malloc(sizeof(element_t));
+    if (!new_element)
+        return false;
+    
+    // Allocate space for the string and copy it
+    new_element->value = malloc(strlen(s) + 1);
+    if (!new_element->value) {
+        free(new_element);
+        return false;
+    }
+    
+    strcpy(new_element->value, s);
+    
+    // Add to the tail of the list
+    list_add_tail(&new_element->list, head);
+    
     return true;
 }
 
@@ -64,7 +123,22 @@ bool q_insert_tail(struct list_head *head, char *s)
  */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || list_empty(head))
+        return NULL;
+    
+    // Get the first element
+    element_t *element = list_first_entry(head, element_t, list);
+    
+    // Copy string to sp if provided
+    if (sp && element->value) {
+        strncpy(sp, element->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';  // Ensure null termination
+    }
+    
+    // Remove from list (but don't free the element)
+    list_del(&element->list);
+    
+    return element;
 }
 
 /*
@@ -73,7 +147,22 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
  */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || list_empty(head))
+        return NULL;
+    
+    // Get the last element
+    element_t *element = list_last_entry(head, element_t, list);
+    
+    // Copy string to sp if provided
+    if (sp && element->value) {
+        strncpy(sp, element->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';  // Ensure null termination
+    }
+    
+    // Remove from list (but don't free the element)
+    list_del(&element->list);
+    
+    return element;
 }
 
 /*
@@ -92,7 +181,17 @@ void q_release_element(element_t *e)
  */
 int q_size(struct list_head *head)
 {
-    return -1;
+    if (!head)
+        return 0;
+    
+    int count = 0;
+    struct list_head *node;
+    
+    list_for_each(node, head) {
+        count++;
+    }
+    
+    return count;
 }
 
 /*
